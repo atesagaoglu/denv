@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 
 import os
-import yaml
 import sys
+import yaml
+import pathlib
+import argparse
 import subprocess
 
 paths = []
 vars = {}
 cmds = []
 
+# default file, can be set with --config
+config_file = os.path.expandvars("$XDG_CONFIG_HOME/denv.yaml")
+
+
 def process(key):
-    # assumes file exists
-    config_file = os.path.expandvars("$XDG_CONFIG_HOME/denv.yaml")
 
     with open(config_file, "r") as file:
         obj = yaml.load(file, Loader=yaml.SafeLoader)
@@ -19,7 +23,7 @@ def process(key):
         try:
             selected = obj[key]
         except KeyError:
-            print(f'Environment {key} not found!')
+            print(f"Environment {key} not found!")
             exit()
 
         if "path" in selected:
@@ -36,10 +40,28 @@ def process(key):
             for d in dep:
                 process(d)
 
+
 if __name__ == "__main__":
-    process(sys.argv[1])
+
+    parser = argparse.ArgumentParser(
+        prog="denv",
+        description="Setup dev environments from yaml files.",
+        usage="denv.py <env_name> [options]",
+    )
+
+    parser.add_argument("key")
+    parser.add_argument(
+        "-c", "--config", help="Specify a config file to use.", type=pathlib.Path
+    )
+
+    args = parser.parse_args()
+
+    if args.config and os.path.isfile(args.config):
+        config_file = args.config
+
+    process(args.key)
 
     print(f'export PATH={":".join(paths)}:$PATH')
 
-    for key,value in vars.items():
+    for key, value in vars.items():
         print(f'export {key}="{value}"')
