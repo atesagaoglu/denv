@@ -47,11 +47,16 @@ if __name__ == "__main__":
         prog="denv",
         description="Setup dev environments from yaml files.",
         usage="denv.py <env_name> [options]",
+        add_help=False,
     )
+    parser.error = lambda msg: print(msg) or parser.print_help() or exit(1)
 
-    parser.add_argument("key")
+    parser.add_argument("key", help="Dev environement to setup from the file.")
     parser.add_argument(
         "-c", "--config", help="Specify a config file to use.", type=pathlib.Path
+    )
+    parser.add_argument(
+        "-h", "--help", action="help", help="Displays the help message."
     )
 
     args = parser.parse_args()
