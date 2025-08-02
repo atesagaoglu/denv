@@ -26,6 +26,10 @@ def process(key):
             path = selected["path"]
             paths.extend(path)
 
+        if "var" in selected:
+            var = selected["var"]
+            vars.update(var)
+
         # Recursively call dependencies
         if "dep" in selected:
             dep = selected["dep"]
@@ -36,3 +40,6 @@ if __name__ == "__main__":
     process(sys.argv[1])
 
     print(f'export PATH={":".join(paths)}:$PATH')
+
+    for key,value in vars.items():
+        print(f'export {key}="{value}"')
