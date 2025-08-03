@@ -5,7 +5,6 @@ import sys
 import yaml
 import pathlib
 import argparse
-import subprocess
 
 paths = []
 vars = {}
@@ -33,6 +32,10 @@ def process(key):
         if "var" in selected:
             var = selected["var"]
             vars.update(var)
+
+        if "cmd" in selected:
+            cmd = selected["cmd"]
+            cmds.extend(cmd)
 
         # Recursively call dependencies
         if "dep" in selected:
@@ -70,3 +73,7 @@ if __name__ == "__main__":
 
     for key, value in vars.items():
         print(f'export {key}="{value}"')
+
+    for cmd in cmds:
+        # eval will call these
+        print(cmd)
