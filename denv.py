@@ -75,6 +75,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--no-deps",
+        "-n",
         help="Setup an environement without setting up it's dependencies",
         action="store_true",
     )
@@ -82,7 +83,10 @@ if __name__ == "__main__":
         "--list", "-l", help="Lists defined environments.", action="store_true"
     )
     parser.add_argument(
-        "--list-deps", help="Lists dependencies of an environment.", action="store_true"
+        "--list-deps",
+        "-L",
+        help="Lists dependencies of an environment.",
+        action="store_true",
     )
     parser.add_argument(
         "-c", "--config", help="Specify a config file to use.", type=pathlib.Path
