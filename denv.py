@@ -3,17 +3,28 @@
 import os
 import sys
 import yaml
-import pathlib
-import argparse
+import datetime
+import tempfile
+import subprocess
 
-paths = []
+import parser
+
 vars = {}
-cmds = []
+post_hook = []
+pre_hook = []
+paths = []
+source = []
 
 # default file, can be set with --config
 config_file = os.path.expandvars("$XDG_CONFIG_HOME/denv.yaml")
 
 args = None
+
+
+def debug(msg):
+    if args.debug:
+        now = datetime.datetime.now()
+        print(f"\033[35m[{now.strftime('%H:%M:%S')}]:\033[39m {msg}")
 
 
 def process(key):
@@ -44,9 +55,17 @@ def process(key):
                 var = selected["var"]
                 vars.update(var)
 
-            if "cmd" in selected:
-                cmd = selected["cmd"]
-                cmds.extend(cmd)
+            if "post" in selected:
+                post = selected["post"]
+                post_hook.extend(post)
+
+            if "pre" in selected:
+                pre = selected["pre"]
+                pre_hook.extend(pre)
+
+            if "source" in selected:
+                src = selected["source"]
+                source.extend(src)
         else:
             print(f'echo "Dependencies:"')
 
@@ -60,58 +79,89 @@ def process(key):
                 process(d)
 
 
+def subshell_zsh():
+    debug("using shell zsh")
+
+    original_zdotdir = os.environ.get("ZDOTDIR")
+    original_zshrc = (
+        "~/.zshrc"
+        if original_zdotdir == None
+        else os.path.join(original_zdotdir, ".zshrc")
+    )
+
+    debug(f"original zdotdir -> {original_zdotdir}")
+    debug(f"original zshrc -> {original_zshrc}")
+
+    with tempfile.TemporaryDirectory() as zdotdir:
+        zshrc = os.path.join(zdotdir, ".zshrc")
+
+        with open(zshrc, "w+") as file:
+
+            def append(str):
+                file.write(f"{str}\n")
+
+            # Temporarily use the original $ZDOTDIR to load the config then use the new one
+            append(f"export ZDOTDIR={original_zdotdir}")
+            append(f"cd {original_zdotdir}")
+            append(f"source ./.zshrc")
+            append(f"export ZDOTDIR={zdotdir}")
+
+            append('echo "in env"')
+
+            debug(f"path -> {paths}")
+            debug(f"pre -> {pre_hook}")
+            debug(f"post -> {post_hook}")
+            debug(f"var -> {vars}")
+            debug(f"source -> {source}")
+
+        env = os.environ.copy()
+        env["ZDOTDIR"] = zdotdir
+        subprocess.run([shell], env=env)
+
+
+def subshell_bash():
+    debug("using shell bash")
+
+
+def subshell_fish():
+    debug("using shell fish")
+
+
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(
-        prog="denv",
-        description="Setup dev environments from yaml files.",
-        usage="denv.py <env_name> [options]",
-        add_help=False,
-    )
-    parser.error = lambda msg: print(msg) or parser.print_help() or exit(1)
+    args = parser.get_args()
+    debug(args)
 
-    parser.add_argument(
-        "key", help="Dev environement to setup from the file.", nargs="?", default=None
-    )
-    parser.add_argument(
-        "--no-deps",
-        "-n",
-        help="Setup an environement without setting up it's dependencies",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--list", "-l", help="Lists defined environments.", action="store_true"
-    )
-    parser.add_argument(
-        "--list-deps",
-        "-L",
-        help="Lists dependencies of an environment.",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-c", "--config", help="Specify a config file to use.", type=pathlib.Path
-    )
-    parser.add_argument(
-        "-h", "--help", action="help", help="Displays the help message."
-    )
+    # shell based rc creating
+    shell = os.environ.get("SHELL")
 
-    args = parser.parse_args()
+    if shell.endswith("zsh"):
+        subshell_zsh()
 
-    # key can only be None when list is set
-    if not args.list and not args.key:
-        parser.print_help()
+    elif shell.endswith("bash"):
+        subshell_bash()
 
-    if args.config and os.path.isfile(args.config):
-        config_file = args.config
+    # NOTE: Will I really bother?
+    elif shell.endswith("fish"):
+        subshell_fish()
+
+    else:
+        print(f"Unsupported shell {shell}. Use --eval instead.")
 
     process(args.key)
 
-    if not args.list_deps:
-        print(f'export PATH={":".join(paths)}:$PATH')
+    # if args.config and os.path.isfile(args.config):
+    #     config_file = args.config
 
-    for key, value in vars.items():
-        print(f'export {key}="{value}"')
-
-    for cmd in cmds:
-        # eval will call these
-        print(cmd)
+    # TODO: This should be completely changed to work under subshell instead of eval
+    # MAYBE: Still allow use of eval with a flag
+    # process(args.key)
+    #
+    # if not args.list_deps:
+    #     print(f'export PATH={":".join(post_hook)}:$PATH')
+    #
+    # for key, value in vars.items():
+    #     print(f'export {key}="{value}"')
+    #
+    # for cmd in cmds:
+    #     print(cmd)
