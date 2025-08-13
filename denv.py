@@ -80,22 +80,10 @@ def process(key):
 
 
 def subshell_zsh():
-    debug("using shell zsh")
-
     original_zdotdir = os.environ.get("ZDOTDIR")
-    original_zshrc = (
-        "~/.zshrc"
-        if original_zdotdir == None
-        else os.path.join(original_zdotdir, ".zshrc")
-    )
-
-    debug(f"original zdotdir -> {original_zdotdir}")
-    debug(f"original zshrc -> {original_zshrc}")
 
     with tempfile.TemporaryDirectory() as zdotdir:
-        zshrc = os.path.join(zdotdir, ".zshrc")
-
-        with open(zshrc, "w+") as file:
+        with open(os.path.join(zdotdir, ".zshrc"), "w+") as file:
 
             def append(str):
                 file.write(f"{str}\n")
@@ -108,19 +96,29 @@ def subshell_zsh():
 
             append('echo "in env"')
 
-            debug(f"path -> {paths}")
-            debug(f"pre -> {pre_hook}")
-            debug(f"post -> {post_hook}")
-            debug(f"var -> {vars}")
-            debug(f"source -> {source}")
+            file.flush()
 
-        env = os.environ.copy()
-        env["ZDOTDIR"] = zdotdir
-        subprocess.run([shell], env=env)
+            env = os.environ.copy()
+            env["ZDOTDIR"] = zdotdir
+            subprocess.run([shell], env=env)
 
 
 def subshell_bash():
-    debug("using shell bash")
+
+    original_bashrc = os.path.expandvars("$HOME/.bashrc")
+
+    with tempfile.TemporaryFile("w") as file:
+
+        def append(str):
+            file.write(f"{str}\n")
+
+        append(f"source {original_bashrc}")
+        append('echo "in env"')
+
+        file.flush()
+
+        env = os.environ.copy()
+        subprocess.run([shell, "--rcfile", original_bashrc], env=env)
 
 
 def subshell_fish():
