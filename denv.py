@@ -6,6 +6,7 @@ import yaml
 import datetime
 import tempfile
 import subprocess
+import time
 
 import parser
 
@@ -127,11 +128,22 @@ def subshell_fish():
 
 if __name__ == "__main__":
 
+    if os.name == "nt":
+        print("Windows not supported.")
+        print("Please use a real operating system.")
+        time.sleep(3)
+        os.startfile("https://medium.com/@kc_clintone/installing-linux-a-step-by-step-guide-77471a47322d")
+        exit(-1)
+
     args = parser.get_args()
     debug(args)
 
     # shell based rc creating
     shell = os.environ.get("SHELL")
+
+    if not shell:
+        print("Couldn't find shell")
+        exit(-1)
 
     if shell.endswith("zsh"):
         subshell_zsh()
