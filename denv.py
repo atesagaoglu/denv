@@ -97,6 +97,11 @@ def subshell_zsh():
             append(f"export ZDOTDIR={zdotdir}")
             append(f"cd {cwd}")
 
+            # remove duplicates
+            append("typeset -U path")
+            append('path=("${(@s/:/)PATH}")')
+            append('PATH="${(j/:/)path}"')
+
             write_to_rc(append)
 
             file.flush()
@@ -117,6 +122,9 @@ def subshell_bash():
             file.write(f"{str}\n")
 
         append(f"source {original_bashrc}")
+
+        append("export PATH=$(awk -v RS=: -v ORS=: '!a[$1]++' <<< \"$PATH\")")
+        append("PATH=${PATH%:}")
 
         write_to_rc(append)
 
@@ -142,7 +150,7 @@ def write_to_rc(append):
         append(pre_hook)
 
     for p in paths:
-        append(f'export PATH="$PATH:{p}"')
+        append(f'export PATH="{p}:$PATH"')
 
     for k, v in vars.items():
         append(f'export {k}="{v}"')
