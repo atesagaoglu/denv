@@ -119,7 +119,7 @@ def subshell_bash():
 
     original_bashrc = os.path.expandvars("$HOME/.bashrc")
 
-    with tempfile.TemporaryFile("w") as file:
+    with tempfile.NamedTemporaryFile("w") as file:
 
         def append(str):
             file.write(f"{str}\n")
@@ -135,7 +135,7 @@ def subshell_bash():
 
         env = os.environ.copy()
         env["DENV_ACTIVE_ENV"] = args.key
-        subprocess.run([shell, "--rcfile", original_bashrc], env=env)
+        subprocess.run([shell, "--rcfile", file.name], env=env)
 
 
 def subshell_fish():
