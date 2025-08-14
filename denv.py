@@ -82,6 +82,9 @@ def process(key):
 
 def subshell_zsh():
     original_zdotdir = os.environ.get("ZDOTDIR")
+    if original_zdotdir is None:
+        original_zdotdir = os.path.expanduser("~")
+
     cwd = os.getcwd()
 
     with tempfile.TemporaryDirectory() as zdotdir:
