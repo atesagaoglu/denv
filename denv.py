@@ -82,6 +82,7 @@ def process(key):
 
 def subshell_zsh():
     original_zdotdir = os.environ.get("ZDOTDIR")
+    cwd = os.getcwd()
 
     with tempfile.TemporaryDirectory() as zdotdir:
         with open(os.path.join(zdotdir, ".zshrc"), "w+") as file:
@@ -94,13 +95,15 @@ def subshell_zsh():
             append(f"cd {original_zdotdir}")
             append(f"source ./.zshrc")
             append(f"export ZDOTDIR={zdotdir}")
+            append(f"cd {cwd}")
 
-            append('echo "in env"')
+            write_to_rc(append)
 
             file.flush()
 
             env = os.environ.copy()
             env["ZDOTDIR"] = zdotdir
+            env["DENV_ACTIVE_ENV"] = args.key
             subprocess.run([shell], env=env)
 
 
@@ -114,16 +117,38 @@ def subshell_bash():
             file.write(f"{str}\n")
 
         append(f"source {original_bashrc}")
-        append('echo "in env"')
+
+        write_to_rc(append)
 
         file.flush()
 
         env = os.environ.copy()
+        env["DENV_ACTIVE_ENV"] = args.key
         subprocess.run([shell, "--rcfile", original_bashrc], env=env)
 
 
 def subshell_fish():
-    debug("using shell fish")
+    print(
+        "I probably won't implement fish support anytime soon.",
+        "Please use a proper shell.",
+    )
+
+
+def write_to_rc(append):
+    for s in source:
+        append(f'source "{s}"')
+
+    for p in pre_hook:
+        append(pre_hook)
+
+    for p in paths:
+        append(f'export PATH="$PATH:{p}"')
+
+    for k, v in vars.items():
+        append(f'export {k}="{v}"')
+
+    for p in post_hook:
+        append(p)
 
 
 if __name__ == "__main__":
@@ -132,7 +157,9 @@ if __name__ == "__main__":
         print("Windows not supported.")
         print("Please use a real operating system.")
         time.sleep(3)
-        os.startfile("https://medium.com/@kc_clintone/installing-linux-a-step-by-step-guide-77471a47322d")
+        os.startfile(
+            "https://medium.com/@kc_clintone/installing-linux-a-step-by-step-guide-77471a47322d"
+        )
         exit(-1)
 
     args = parser.get_args()
@@ -144,6 +171,8 @@ if __name__ == "__main__":
     if not shell:
         print("Couldn't find shell")
         exit(-1)
+
+    process(args.key)
 
     if shell.endswith("zsh"):
         subshell_zsh()
@@ -157,21 +186,3 @@ if __name__ == "__main__":
 
     else:
         print(f"Unsupported shell {shell}. Use --eval instead.")
-
-    process(args.key)
-
-    # if args.config and os.path.isfile(args.config):
-    #     config_file = args.config
-
-    # TODO: This should be completely changed to work under subshell instead of eval
-    # MAYBE: Still allow use of eval with a flag
-    # process(args.key)
-    #
-    # if not args.list_deps:
-    #     print(f'export PATH={":".join(post_hook)}:$PATH')
-    #
-    # for key, value in vars.items():
-    #     print(f'export {key}="{value}"')
-    #
-    # for cmd in cmds:
-    #     print(cmd)
