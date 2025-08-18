@@ -15,6 +15,7 @@ post_hook = []
 pre_hook = []
 paths = []
 source = []
+cwd = None
 
 # default file, can be set with --config
 config_file = os.path.expandvars("$XDG_CONFIG_HOME/denv.yaml")
@@ -67,6 +68,9 @@ def process(key):
             if "source" in selected:
                 src = selected["source"]
                 source.extend(src)
+
+            if "cwd" in selected:
+                cwd = selected["cwd"]
         else:
             print(f'echo "Dependencies:"')
 
@@ -161,7 +165,12 @@ def write_to_rc(append):
     for p in post_hook:
         append(p)
 
+    if not os.path.exists(cwd):
+        os.mkdir(cwd)
+    append(cwd)
 
+
+# TODO: YAML format validation is necessary to avoid unexpected behavior
 if __name__ == "__main__":
 
     if os.name == "nt":
