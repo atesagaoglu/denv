@@ -70,7 +70,9 @@ def process(key):
                 source.extend(src)
 
             if "cwd" in selected:
+                global cwd
                 cwd = selected["cwd"]
+
         else:
             print(f'echo "Dependencies:"')
 
@@ -165,9 +167,10 @@ def write_to_rc(append):
     for p in post_hook:
         append(p)
 
-    if not os.path.exists(cwd):
-        os.mkdir(cwd)
-    append(cwd)
+    expanded_cwd = os.path.expandvars(cwd)
+    if cwd and not os.path.exists(expanded_cwd):
+        os.mkdir(expanded_cwd)
+    append(f'cd "{expanded_cwd}"')
 
 
 # TODO: YAML format validation is necessary to avoid unexpected behavior
