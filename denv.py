@@ -17,8 +17,8 @@ paths = []
 source = []
 cwd = None
 
-# default file, can be set with --config
-config_file = os.path.expandvars("$XDG_CONFIG_HOME/denv.yaml")
+# MAYBE: a list of paths to look for
+config_file = os.path.expandvars("$HOME/.config/denv.yaml")
 
 args = None
 
@@ -167,10 +167,12 @@ def write_to_rc(append):
     for p in post_hook:
         append(p)
 
-    expanded_cwd = os.path.expandvars(cwd)
-    if cwd and not os.path.exists(expanded_cwd):
-        os.mkdir(expanded_cwd)
-    append(f'cd "{expanded_cwd}"')
+    if cwd:
+        expanded_cwd = os.path.expandvars(cwd)
+        if not os.path.exists(expanded_cwd):
+            os.mkdir(expanded_cwd)
+
+        append(f'cd "{expanded_cwd}"')
 
 
 # TODO: YAML format validation is necessary to avoid unexpected behavior
