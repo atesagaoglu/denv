@@ -201,30 +201,27 @@ if __name__ == "__main__":
     args = parser.get_args()
     debug(args)
 
+    process(args.key)
+
     # shell based rc creating
-    detected_shell = os.environ.get("SHELL")
+    print(shell)
+    shell = os.environ.get("SHELL") if not shell else shell
 
-    use_shell = None
-    if shell:
-        use_shell = shell
-    else:
-        use_shell = detected_shell if detected_shell else None
+    print(shell)
 
-    if not use_shell:
+    if not shell:
         print("Couldn't find shell")
         exit(-1)
 
-    process(args.key)
-
-    if use_shell.endswith("zsh"):
+    if shell.endswith("zsh"):
         subshell_zsh()
 
-    elif use_shell.endswith("bash"):
+    elif shell.endswith("bash"):
         subshell_bash()
 
     # NOTE: Will I really bother?
-    elif use_shell.endswith("fish"):
+    elif shell.endswith("fish"):
         subshell_fish()
 
     else:
-        print(f"Unsupported shell {use_shell}. Use --eval instead.")
+        print(f"Unsupported shell {shell}. Use --eval instead.")
