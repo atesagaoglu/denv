@@ -16,6 +16,7 @@ pre_hook = []
 paths = []
 source = []
 cwd = None
+shell = None
 
 # MAYBE: a list of paths to look for
 config_file = os.path.expandvars("$HOME/.config/denv.yaml")
@@ -72,6 +73,16 @@ def process(key):
             if "cwd" in selected:
                 global cwd
                 cwd = selected["cwd"]
+
+            if "shell" in selected:
+                global shell
+                if not shell:
+                    # TODO: check for type in each field
+                    if isinstance(selected["shell"], str):
+                        shell = selected["shell"]
+                    else:
+                        print("Fields shell is should be a string")
+                        exit(-1)
 
         else:
             print(f'echo "Dependencies:"')
@@ -191,23 +202,29 @@ if __name__ == "__main__":
     debug(args)
 
     # shell based rc creating
-    shell = os.environ.get("SHELL")
+    detected_shell = os.environ.get("SHELL")
 
-    if not shell:
+    use_shell = None
+    if shell:
+        use_shell = shell
+    else:
+        use_shell = detected_shell if detected_shell else None
+
+    if not use_shell:
         print("Couldn't find shell")
         exit(-1)
 
     process(args.key)
 
-    if shell.endswith("zsh"):
+    if use_shell.endswith("zsh"):
         subshell_zsh()
 
-    elif shell.endswith("bash"):
+    elif use_shell.endswith("bash"):
         subshell_bash()
 
     # NOTE: Will I really bother?
-    elif shell.endswith("fish"):
+    elif use_shell.endswith("fish"):
         subshell_fish()
 
     else:
-        print(f"Unsupported shell {shell}. Use --eval instead.")
+        print(f"Unsupported shell {use_shell}. Use --eval instead.")
